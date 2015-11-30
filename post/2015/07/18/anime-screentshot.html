@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=1, minimum-scale=1, maximum-scale=1">
+        <meta name="keywords" content="视频,">
+        <meta name="description" content="动画截图方案">
+        <link rel="stylesheet" href="/bundle/index.css">
+        <title>动画截图方案</title>
+    </head>
+    <body>
+        <article class="container">
+            <a class="index" href="/">一个无趣的博客</a>
+<ul class="menu">
+    <li class="menu-item"><a href="/archive.html">归档</a></li>
+    <li class="menu-item"><a href="/tag.html">标签</a></li>
+    <li class="menu-item"><a href="/atom.xml">订阅</a></li>
+</ul>
+
+            <article class="main article">
+                <h1 class="title">动画截图方案</h1>
+                <section class="info">
+                    
+                    
+                    <span class="date" data-time="1437223748">
+                        <span class="from"></span>
+                        
+                    </span>
+                    <span class="tags"><a class="tag" href="/tag/%e8%a7%86%e9%a2%91/index.html">视频</a></span>
+                </section>
+                <article class="content"><p>在下一版的市场中，准备要加入动态截图
+首选方案是 gif，除此之外，webp、视频也都在考虑范畴内</p>
+
+<p>首先是一段demo，录制方式如下：</p>
+
+<pre><code class="language-bash">adb shell screenrecord /sdcard/demo.mp4 --time-limit 10
+</code></pre>
+
+<p>结果预览: 1132K
+<video src="http://storage.live.com/items/2A3A7FC21BEBE9A7!202" controls="controls" preload="none">
+   Your browser does not implement html5 video.
+&lt;/ video&gt;</p>
+
+<p>因为网站流量的关系，我们对视频的体积格外在意，为此，我们可以牺牲质量以求高压缩</p>
+
+<h1>测试 GIF</h1>
+
+<pre><code class="language-bash">ffmpeg -i demo.mp4 -vf fps=22,scale=-2:720 result.gif
+</code></pre>
+
+<p>以下是480p的预览，问题是麻点，体积大，即使是将fps调低到10以内依然不小
+！！以下预览是在fps=9的极端情况下完成的，仍有445K
+<img src="/images/loader.gif" data-src="http://storage.live.com/items/2A3A7FC21BEBE9A7!203" alt="result of 480p" /></p>
+
+<h2>极限压缩和麻点的解决</h2>
+
+<h3>麻点问题——<a href="blog.pkh.me/p/21-high-quality-gif-with-ffmpeg.html">调色板</a></h3>
+
+<pre><code class="language-bash">ffmpeg -i demo.mp4 -vf fps=22,scale=-2:720:flags=lanczos,palettegen -y palette.png
+ffmpeg -i demo.mp4 -i palette.png -lavfi &quot;fps=22,scale=-2:720:flags=lanczos [x]; [x][1:v] paletteuse=dither=none&quot; -y demo.gif
+</code></pre>
+
+<p>这里我们使用了dither=none，禁用抖动的目的是为了更小的体积，但效果会打折
+此时的大小为 1378K</p>
+
+<h3>压缩</h3>
+
+<h4>photoshop</h4>
+
+<p>进一步有损压缩，说实话，我看到bilibili的颜色时内心是崩溃的，128色是为了减小体积，其实256也是一样崩溃
+<img src="/images/loader.gif" data-src="http://storage.live.com/items/2A3A7FC21BEBE9A7!204" alt="ps-gif-preview" /></p>
+
+<h4><a href="https://pornel.net/lossygif">gifscicle-lossy</a></h4>
+
+<p>这是一个带有损压缩参数的版本
+经尝试，和ps的有损压缩共用效果可叠加，同样的有损程度体积小于ps</p>
+
+<pre><code class="language-bash">./gifsicle-debian6 -O3 --lossy=30 -o result.gif demo.gif
+</code></pre>
+
+<p>经过轻度压缩后，体积减小到 976K，以下是最终结果
+<img src="/images/loader.gif" data-src="http://storage.live.com/items/2A3A7FC21BEBE9A7!205" alt="gif result" /></p>
+
+<p>这是我能找到的最小GIF体积的方案了
+无论是再减少色彩数或是再进一步有损，将严重影响质量</p>
+
+<h1>测试视频</h1>
+
+<p>具体测试过 apng，webp以及各种视频编码格式
+apng 巨大，直接跳过
+webp 在有损状态下，比 gif 略好，但仍然偏大
+H.265 是效果最好的，但在手机上没有直接嵌入的解决方案</p>
+
+<h2>最终结果</h2>
+
+<pre><code class="language-bash">ffmpeg -i demo.mp4 -vf fps=25,scale=-2:720 -c:v libx264 -crf 27 -preset veryslow -tune zerolatency -an -y result.mp4
+</code></pre>
+
+<p>###参数解释：
+fps: 默认是34，实际12就比较流畅了，这个参数对体积有影响，但并不大
+scale: 默认960，对体积影响也不算特别大，不过720也足够清晰了
+vcodec: 测试结果是libx265最好，但受限于手机解码限制，嵌入困难
+crf: 这个参数对体积影响最直接，27是以原视频1/4的体积测试而来
+preset: 极端情况下的placebo表现并不如veryslow来得好
+tune: 可接受画质下zerolatency体积最小，ssim更小，但画质惨不忍睹
+an: 可加可不加，因为screenrecord命令本身就没声音</p>
+
+<h3>测试结果 277K</h3>
+
+<p><video src="http://storage.live.com/items/2A3A7FC21BEBE9A7!201" controls preload="none">
+   Your browser does not implement html5 video.
+&lt;/ video&gt;</p>
+</article>
+                <section class="author">
+                    
+                    <a class="name" href="/about..html"></a>
+                    <div class="intro"></div>
+                </section>
+                <section class="recommend">
+                    
+                    <section class="nav prev more">
+                        <div class="head">上篇文章</div>
+                        <a class="link" href="/post/2015/08/18/stock150818.html">感觉累了就放空自己</a>
+                    </section>
+                    
+                    
+                    <section class="nav next more">
+                        <div class="head">下篇文章</div>
+                        <a class="link" href="/post/2015/07/11/test.html">测试</a>
+                    </section>
+                    
+                </section>
+                <section id="disqus_thread"></section>
+            </article>
+        </article>
+        <footer class="footer">
+    <span class="copyright">
+        一个无趣的博客 ©
+        <script type="text/javascript">
+            document.write(new Date().getFullYear());
+        </script>
+    </span>
+    <span class="publish">Powered by <a href="http://www.inkpaper.io/" target="_blank">Ink</a></span>
+</footer>
+
+        <script src="/bundle/index.js"></script>
+    </body>
+    <script type="text/javascript">
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = '//.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+    </script>
+</html>
