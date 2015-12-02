@@ -1,11 +1,21 @@
 <?xml version="1.0" encoding="UTF-8"?><feed xmlns="http://www.w3.org/2005/Atom">
   <title>一个无趣的博客</title>
   <id>http://xpn.im</id>
-  <updated>2015-12-01T02:48:28+08:00</updated>
+  <updated>2015-12-02T23:55:26+08:00</updated>
   <link href="http://xpn.im"></link>
   <author>
     <name>一个无趣的博客</name>
   </author>
+  <entry>
+    <title>只看得懂上午，看不懂下午（InkPaper）</title>
+    <updated>2015-12-02T21:00:00+08:00</updated>
+    <id>tag:,2015-12-02:</id>
+    <content type="html"></content>
+    <link href="http:\xpn.im\post\2015\12\02\stock151202.html"></link>
+    <author>
+      <name>tastypear</name>
+    </author>
+  </entry>
   <entry>
     <title>回抽等待的时机</title>
     <updated>2015-11-30T21:00:00+08:00</updated>
